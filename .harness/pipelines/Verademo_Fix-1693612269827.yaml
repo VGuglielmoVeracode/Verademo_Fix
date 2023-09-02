@@ -10,28 +10,26 @@ pipeline:
         connectorRef: account.Github_OAuth_1693612209080
         repoName: VGuglielmoVeracode/Verademo_Fix
   stages:
-    - stage:
-        identifier: build
+    - step:
+        type: Run
         name: build
+        identifier: build
         spec:
-          cloneCodebase: true
-          execution:
-            steps:
-              - step:
-                  identifier: dockerbuild
-                  name: docker_build
-                  spec:
-                    image: plugins/docker
-                    settings:
-                      dry_run: "true"
-                      repo: hello/world
-                      tags: latest
-                  timeout: ""
-                  type: Plugin
-          platform:
-            arch: Amd64
-            os: Linux
-          runtime:
-            spec: {}
-            type: Cloud
-        type: CI
+          connectorRef: account.harnessImage
+          image: maven:3.8-jdk-11
+          shell: Sh
+          command: mvn clean package dependency:copy-dependencies
+    - step:
+        type: Run
+        name: check dependencies
+        identifier: check_dependencies
+        spec:
+          connectorRef: account.harnessImage
+          image: maven:3.8-jdk-11
+          shell: Sh
+          command: mvn dependency-check:check -U -DskipTests
+          reports:
+            type: JUnit
+            spec:
+              paths:
+                - /harness/target/*.xml
